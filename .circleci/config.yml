@@ -6,9 +6,15 @@ jobs:
     - image: tweag/inline-java
     steps:
     - checkout
+    - restore_cache:
+        key: stack-dependencies
     - run:
         name: build dependencies
         command: stack --no-terminal build --only-snapshot --prefetch --test --bench
+    - save_cache:
+        key: stack-dependencies
+        paths:
+        - ~/.stack
     - run:
         name: build project
         command: stack --no-terminal build --pedantic --test --bench --no-run-tests --no-run-benchmarks
