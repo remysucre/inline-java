@@ -1,0 +1,17 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/
+    docker:
+    - image: tweag/inline-java
+    steps:
+    - checkout
+    - run:
+        name: build dependencies
+        command: stack --no-terminal build --only-snapshot --prefetch --test --bench
+    - run:
+        name: build project
+        command: stack --no-terminal build --pedantic --test --bench --no-run-tests --no-run-benchmarks
+    - run:
+        name: test
+        command: stack --no-terminal test
