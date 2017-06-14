@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/
+    working_directory: ~/inline-java
     docker:
     - image: tweag/inline-java
     steps:
