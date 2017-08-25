@@ -10,7 +10,9 @@ jobs:
         key: inline-java-stack-dependencies
     - run:
         name: build dependencies
-        command: stack --no-terminal build --only-dependencies --prefetch --test --bench
+        command: |
+          ldd /root/.stack/setup-exe-cache/x86_64-linux-nix/*
+          stack --no-terminal build --only-dependencies --prefetch --test --bench
     - save_cache:
         key: inline-java-stack-dependencies
         paths:
