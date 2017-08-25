@@ -11,7 +11,7 @@ jobs:
     - run:
         name: build dependencies
         command: |
-          ldd /root/.stack/setup-exe-cache/x86_64-linux-nix/*
+          rm -rf ~/.stack
           stack --no-terminal build --only-dependencies --prefetch --test --bench
     - save_cache:
         key: inline-java-stack-dependencies
