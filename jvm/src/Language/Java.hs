@@ -45,8 +45,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Language.Java
   ( module Foreign.JNI.Types
@@ -76,6 +78,9 @@ module Language.Java
   , Reify(..)
   , Reflect(..)
   , Interp
+  -- * (Auto)boxed primitives
+  , Boxed
+  , unbox
   -- * Re-exports
   , sing
   ) where
@@ -436,6 +441,35 @@ jobject :: (Coercible a ty, IsReferenceType ty) => a -> J ty
 jobject x
   | JObject jobj <- coerce x = unsafeCast jobj
   | otherwise = error "impossible"
+
+type family Boxed (ty :: JType) :: JType where
+  Boxed ('Class "java.lang.Boolean") = 'Prim "boolean"
+  Boxed ('Class "java.lang.Byte") = 'Prim "byte"
+  Boxed ('Class "java.lang.Char") = 'Prim "char"
+  Boxed ('Class "java.lang.Short") = 'Prim "short"
+  Boxed ('Class "java.lang.Int") = 'Prim "int"
+  Boxed ('Class "java.lang.Long") = 'Prim "long"
+  Boxed ('Class "java.lang.Float") = 'Prim "float"
+  Boxed ('Class "java.lang.Double") = 'Prim "double"
+  Boxed ty = ty
+
+-- | Values of primitive type are sometimes (auto)boxed. This function unboxes
+-- such values. Use 'reflect' to rebox a primitive value.
+unbox :: forall a ty. (Coercible a ty) => J (Boxed ty) -> IO a
+unbox obj =
+    -- unsafeCast needed because type inference powerful to determine that
+    -- matching implies ty ~ 'Class sym in each branch, but can't infer concrete
+    -- sym.
+    unsafeUncoerce <$> case sing :: Sing ty of
+      SClass "java.lang.Boolean" -> jvalue @Bool <$> reify (unsafeCast obj)
+      SClass "java.lang.Byte" -> jvalue @CChar <$> reify (unsafeCast obj)
+      SClass "java.lang.Char" -> jvalue @Word16 <$> reify (unsafeCast obj)
+      SClass "java.lang.Short" -> jvalue @Int16 <$> reify (unsafeCast obj)
+      SClass "java.lang.Int" -> jvalue @Int32 <$> reify (unsafeCast obj)
+      SClass "java.lang.Long" -> jvalue @Int64 <$> reify (unsafeCast obj)
+      SClass "java.lang.Float" -> jvalue @Float <$> reify (unsafeCast obj)
+      SClass "java.lang.Double" -> jvalue @Double <$> reify (unsafeCast obj)
+      _ -> return (JObject (unsafeCast @(Boxed ty) @ty obj))
 
 -- | Map a Haskell type to the symbolic representation of a Java type.
 type family Interp (a :: k) :: JType
