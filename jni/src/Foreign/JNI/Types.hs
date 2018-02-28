@@ -86,6 +86,7 @@ import Data.Singletons
 #endif
   )
 import Data.Singletons.Prelude (Sing(..))
+import Data.Singletons.ShowSing
 import Data.Singletons.TypeLits (KnownSymbol, symbolVal)
 import Data.Word
 import Foreign.C (CChar)
@@ -166,23 +167,21 @@ data instance Sing (a :: JType) where
   SGeneric :: Sing ty -> Sing tys -> Sing ('Generic ty tys)
   SVoid :: Sing 'Void
 
-instance Show (Sing (a :: JType)) where
-  showsPrec d (SClass s) = showParen (d > 10) $
+instance ShowSing JType where
+  showsSingPrec d (SClass s) = showParen (d > 10) $
       showString "SClass " . showsPrec 11 s
-  showsPrec d (SIface s) = showParen (d > 10) $
+  showsSingPrec d (SIface s) = showParen (d > 10) $
       showString "SIface " . showsPrec 11 s
-  showsPrec d (SPrim s) = showParen (d > 10) $
+  showsSingPrec d (SPrim s) = showParen (d > 10) $
       showString "SPrim " . showsPrec 11 s
-  showsPrec d (SArray s) = showParen (d > 10) $
-      showString "SArray " . showsPrec 11 s
-  showsPrec d (SGeneric s sargs) = showParen (d > 10) $
-      showString "SGeneric " . showsPrec 11 s . showsPrec 11 sargs
-  showsPrec _ SVoid = showString "SVoid"
+  showsSingPrec d (SArray s) = showParen (d > 10) $
+      showString "SArray " . showsSingPrec 11 s
+  showsSingPrec d (SGeneric s sargs) = showParen (d > 10) $
+      showString "SGeneric " . showsSingPrec 11 s . showsSingPrec 11 sargs
+  showsSingPrec _ SVoid = showString "SVoid"
 
-instance Show (Sing (a :: [JType])) where
-  showsPrec _ SNil = showString "SNil"
-  showsPrec d (SCons ty tys) = showParen (d > 10) $
-      showString "SCons " . showsPrec 11 ty . showChar ' ' . showsPrec 11 tys
+instance Show (Sing (a :: JType)) where
+  showsPrec = showsSingPrec
 
 -- XXX SingI constraint temporary hack because GHC 7.10 has trouble inferring
 -- this constraint in 'signature'.
